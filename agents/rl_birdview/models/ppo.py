@@ -222,7 +222,7 @@ class PPO():
 
         self.ep_stat_buffer = deque(maxlen=100)
         self._last_obs = self.env.reset()
-        self._last_dones = np.zeros((self.env.num_envs,), dtype=np.bool)
+        self._last_dones = np.zeros((self.env.num_envs,), dtype=bool)
 
         callback.init_callback(self)
 

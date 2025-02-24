@@ -168,7 +168,7 @@ class DataWriter():
 
         # write to h5
         if valid:
-            do_save = np.zeros(len(self._data_list), dtype=np.bool)
+            do_save = np.zeros(len(self._data_list), dtype=bool)
             for idx, data in enumerate(self._data_list):
                 if data['critical']:
                     do_save[np.maximum(0, idx+self._im_stack_idx+1)] = True

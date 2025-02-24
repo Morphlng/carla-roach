@@ -22,7 +22,7 @@ class WandbCallback(BaseCallback):
         wandb.init(project=cfg.wb_project, name=cfg.wb_name, notes=cfg.wb_notes, tags=cfg.wb_tags)
         wandb.config.update(OmegaConf.to_container(cfg))
 
-        wandb.save('./config_agent.yaml')
+        wandb.save('config_agent.yaml')
         wandb.save('.hydra/*')
 
         self.vec_env = vec_env
@@ -77,7 +77,7 @@ class WandbCallback(BaseCallback):
 
             ckpt_path = (self._ckpt_dir / f'ckpt_{self.model.num_timesteps}.pth').as_posix()
             self.model.save(ckpt_path)
-            wandb.save(f'./{ckpt_path}')
+            wandb.save(ckpt_path)
         self.n_epoch += 1
 
         # CONFIGHACK: curriculum

@@ -146,7 +146,7 @@ def main(cfg: DictConfig):
 
     # start carla servers
     server_manager = server_utils.CarlaServerManager(cfg.carla_sh_path, port=cfg.port)
-    server_manager.start()
+    # server_manager.start()
 
     # single actor, place holder for multi actors
     driver_dict = {}
@@ -244,7 +244,7 @@ def main(cfg: DictConfig):
     wandb.init(project=cfg.wb_project, name=wb_run_name, group=cfg.wb_group, notes=cfg.wb_notes, tags=cfg.wb_tags,
                id=wb_run_id, resume="allow")
     wandb.config.update(OmegaConf.to_container(cfg))
-    wandb.save('./config_agent.yaml')
+    wandb.save('config_agent.yaml')
     with open(wb_checkpoint_path, 'w') as f:
         f.write(wandb.run.id)
 

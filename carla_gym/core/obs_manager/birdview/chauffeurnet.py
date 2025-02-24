@@ -69,7 +69,7 @@ class ObsManager(ObsManagerBase):
         self._parent_actor = parent_actor
         self._world = self._parent_actor.vehicle.get_world()
 
-        maps_h5_path = self._map_dir / (self._world.get_map().name + '.h5')
+        maps_h5_path = self._map_dir / (self._world.get_map().name.split('/')[-1] + '.h5')
         with h5py.File(maps_h5_path, 'r', libver='latest', swmr=True) as hf:
             self._road = np.array(hf['road'], dtype=np.uint8)
             self._lane_marking_all = np.array(hf['lane_marking_all'], dtype=np.uint8)
@@ -116,7 +116,21 @@ class ObsManager(ObsManagerBase):
             c_ev = abs(ev_loc.x - w.location.x) < 1.0 and abs(ev_loc.y - w.location.y) < 1.0
             return c_distance and (not c_ev)
 
-        vehicle_bbox_list = self._world.get_level_bbs(carla.CityObjectLabel.Vehicles)
+        try:
+            vehicle_bbox_list = self._world.get_level_bbs(carla.CityObjectLabel.Vehicles)
+        except AttributeError:
+            vehicle_bbox_list = []
+            for _type in [
+                carla.CityObjectLabel.Bicycle,
+                carla.CityObjectLabel.Bus,
+                carla.CityObjectLabel.Car,
+                carla.CityObjectLabel.Motorcycle,
+                carla.CityObjectLabel.Rider,
+                carla.CityObjectLabel.Train,
+                carla.CityObjectLabel.Truck,
+            ]:
+                vehicle_bbox_list += self._world.get_level_bbs(_type)
+
         walker_bbox_list = self._world.get_level_bbs(carla.CityObjectLabel.Pedestrians)
         if self._scale_bbox:
             vehicles = self._get_surrounding_actors(vehicle_bbox_list, is_within_distance, 1.0)
@@ -139,10 +153,10 @@ class ObsManager(ObsManagerBase):
             = self._get_history_masks(M_warp)
 
         # road_mask, lane_mask
-        road_mask = cv.warpAffine(self._road, M_warp, (self._width, self._width)).astype(np.bool)
-        lane_mask_all = cv.warpAffine(self._lane_marking_all, M_warp, (self._width, self._width)).astype(np.bool)
+        road_mask = cv.warpAffine(self._road, M_warp, (self._width, self._width)).astype(bool)
+        lane_mask_all = cv.warpAffine(self._lane_marking_all, M_warp, (self._width, self._width)).astype(bool)
         lane_mask_broken = cv.warpAffine(self._lane_marking_white_broken, M_warp,
-                                         (self._width, self._width)).astype(np.bool)
+                                         (self._width, self._width)).astype(bool)
 
         # route_mask
         route_mask = np.zeros([self._width, self._width], dtype=np.uint8)
@@ -150,7 +164,7 @@ class ObsManager(ObsManagerBase):
                                    for wp, _ in self._parent_actor.route_plan[0:80]])
         route_warped = cv.transform(route_in_pixel, M_warp)
         cv.polylines(route_mask, [np.round(route_warped).astype(np.int32)], False, 1, thickness=16)
-        route_mask = route_mask.astype(np.bool)
+        route_mask = route_mask.astype(bool)
 
         # ev_mask
         ev_mask = self._get_mask_from_actor_list([(ev_transform, ev_bbox.location, ev_bbox.extent)], M_warp)
@@ -231,10 +245,10 @@ class ObsManager(ObsManagerBase):
         mask = np.zeros([self._width, self._width], dtype=np.uint8)
         for sp_locs in stopline_vtx:
             stopline_in_pixel = np.array([[self._world_to_pixel(x)] for x in sp_locs])
-            stopline_warped = cv.transform(stopline_in_pixel, M_warp)
+            stopline_warped = cv.transform(stopline_in_pixel, M_warp).astype(int)
             cv.line(mask, tuple(stopline_warped[0, 0]), tuple(stopline_warped[1, 0]),
                     color=1, thickness=6)
-        return mask.astype(np.bool)
+        return mask.astype(bool)
 
     def _get_mask_from_actor_list(self, actor_list, M_warp):
         mask = np.zeros([self._width, self._width], dtype=np.uint8)
@@ -252,7 +266,7 @@ class ObsManager(ObsManagerBase):
             corners_warped = cv.transform(corners_in_pixel, M_warp)
 
             cv.fillConvexPoly(mask, np.round(corners_warped).astype(np.int32), 1)
-        return mask.astype(np.bool)
+        return mask.astype(bool)
 
     @staticmethod
     def _get_surrounding_actors(bbox_list, criterium, scale=None):

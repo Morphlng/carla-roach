@@ -43,7 +43,7 @@ class ObsManager(ObsManagerBase):
              'on_sidewalk': spaces.MultiBinary(self._max_detection_number),
              'road_id': spaces.Box(
                 low=0, high=5000, shape=(self._max_detection_number, 1),
-                dtype=np.int8),
+                dtype=np.int16),
              'lane_id': spaces.Box(
                 low=-20, high=20, shape=(self._max_detection_number, 1),
                 dtype=np.int8)})
@@ -104,7 +104,7 @@ class ObsManager(ObsManagerBase):
             'absolute_velocity': np.array(absolute_velocity, dtype=np.float32),
             'extent': np.array(extent, dtype=np.float32),
             'on_sidewalk': np.array(on_sidewalk, dtype=np.int8),
-            'road_id': np.array(road_id, dtype=np.int8),
+            'road_id': np.array(road_id, dtype=np.int16),
             'lane_id': np.array(lane_id, dtype=np.int8)
         }
 

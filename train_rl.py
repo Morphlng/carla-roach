@@ -23,7 +23,7 @@ def main(cfg: DictConfig):
 
     # start carla servers
     server_manager = server_utils.CarlaServerManager(cfg.carla_sh_path, configs=cfg.train_envs)
-    server_manager.start()
+    # server_manager.start()
 
     # prepare agent
     agent_name = cfg.actors[cfg.ev_id].agent
@@ -59,7 +59,7 @@ def main(cfg: DictConfig):
         return env
 
     if cfg.dummy or len(server_manager.env_configs) == 1:
-        env = DummyVecEnv([lambda config=config: env_maker(config) for config in server_manager.env_configs])
+        env = DummyVecEnv([lambda config=config: env_maker(config) for config in server_manager.env_configs[:1]])
     else:
         env = SubprocVecEnv([lambda config=config: env_maker(config) for config in server_manager.env_configs])
 
@@ -73,7 +73,7 @@ def main(cfg: DictConfig):
 
     agent.learn(env, total_timesteps=int(cfg.total_timesteps), callback=callback, seed=cfg.seed)
 
-    server_manager.stop()
+    # server_manager.stop()
 
 
 if __name__ == '__main__':

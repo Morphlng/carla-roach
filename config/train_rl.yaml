@@ -17,10 +17,10 @@ ev_id: hero
 carla_sh_path: /home/ubuntu/apps/carla/carla910/CarlaUE4.sh
 total_timesteps: 1e8
 seed: 2021
-kill_running: true
-dummy: false
+kill_running: false
+dummy: true
 wb_project: train_rl
-wb_name: null
+wb_name: carla-roach-ppo-xtma-beta
 wb_notes: null
 wb_tags: null
 curriculum: false

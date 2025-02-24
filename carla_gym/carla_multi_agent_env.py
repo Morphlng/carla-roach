@@ -107,6 +107,13 @@ class CarlaMultiAgentEnv(gym.Env):
         return obs_dict
 
     def step(self, control_dict):
+        # for actor_id, action in control_dict.items():
+        #     throttle = action[0] if action[0] > 0 else 0
+        #     brake = -action[0] if action[0] < 0 else 0
+        #     steer = action[1]
+        #     control = carla.VehicleControl(throttle, steer, brake)
+        #     control_dict[actor_id] = control
+
         self._ev_handler.apply_control(control_dict)
         self._sa_handler.tick()
         # tick world

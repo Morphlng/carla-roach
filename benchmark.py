@@ -139,7 +139,7 @@ def main(cfg: DictConfig):
     # init wandb
     wandb.init(project=cfg.wb_project, name=suite_name, group=cfg.wb_group, notes=cfg.wb_notes, tags=cfg.wb_tags)
     wandb.config.update(OmegaConf.to_container(cfg))
-    wandb.save('./config_agent.yaml')
+    wandb.save('config_agent.yaml')
 
     # loop through each route
     for task_idx in range(ckpt_task_idx, env.num_tasks):
