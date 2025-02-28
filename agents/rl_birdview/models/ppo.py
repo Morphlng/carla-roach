@@ -1,4 +1,5 @@
 import time
+import logging
 import torch as th
 import numpy as np
 from collections import deque
@@ -10,6 +11,7 @@ from stable_baselines3.common.utils import explained_variance
 
 from .ppo_buffer import PpoBuffer
 
+logger = logging.getLogger(__name__)
 
 class PPO():
     def __init__(self, policy, env,
@@ -29,7 +31,7 @@ class PPO():
                  update_adv=False,
                  lr_schedule_step=None,
                  start_num_timesteps: int = 0):
-
+        self.logger = logger
         self.policy = policy
         self.env = env
         self.learning_rate = learning_rate
