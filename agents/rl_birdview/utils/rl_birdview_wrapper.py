@@ -21,6 +21,8 @@ eval_num_zombie_walkers = {
 }
 
 class RlBirdviewWrapper(gym.Wrapper):
+    render_mode: str = "rgb_array"
+    
     def __init__(self, env, input_states=[], acc_as_action=False):
         env = env.unwrapped
         assert len(env._obs_configs) == 1
@@ -28,6 +30,11 @@ class RlBirdviewWrapper(gym.Wrapper):
         self._input_states = input_states
         self._acc_as_action = acc_as_action
         self._render_dict = {}
+
+        self.action_value = 0.0
+        self.action_log_probs = 0.0
+        self.action_mu = np.array([0.0, 0.0])
+        self.action_sigma = np.array([0.0, 0.0])
 
         state_spaces = []
         if 'speed' in self._input_states:
@@ -133,7 +140,10 @@ class RlBirdviewWrapper(gym.Wrapper):
         return self.im_render(self._render_dict)
 
     def __getattr__(self, name):
-        return getattr(self.env.unwrapped, name)
+        wrapper_value = getattr(self, name, None)
+        if wrapper_value is None:
+            return getattr(self.env.unwrapped, name, None)
+        return wrapper_value
 
     @staticmethod
     def im_render(render_dict):
