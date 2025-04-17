@@ -192,6 +192,55 @@ class WandbCallback(BaseCallback):
         return avg_ep_stat, ep_events
 
     @staticmethod
+    def evaluate_sb3_algo(env, algo, video_path, min_eval_steps=3000):
+        t0 = time.time()
+        for i in range(env.num_envs):
+            env.set_attr('eval_mode', True, indices=i)
+        obs = env.reset()
+
+        list_render = []
+        ep_stat_buffer = []
+        ep_events = {}
+        for i in range(env.num_envs):
+            ep_events[f'venv_{i}'] = []
+
+        n_step = 0
+        n_timeout = 0
+        env_done = np.array([False]*env.num_envs)
+        # while n_step < min_eval_steps:
+        while n_step < min_eval_steps or not np.all(env_done):
+            actions, states = algo.predict(obs, deterministic=True)
+            obs, reward, done, info = env.step(actions)
+
+            list_render.append(env.render(mode='rgb_array'))
+
+            n_step += 1
+            env_done |= done
+
+            for i in np.where(done)[0]:
+                ep_stat_buffer.append(info[i]['episode_stat'])
+                ep_events[f'venv_{i}'].append(info[i]['episode_event'])
+                n_timeout += int(info[i]['timeout'])
+
+        # conda install x264=='1!152.20180717' ffmpeg=4.0.2 -c conda-forge
+        encoder = ImageEncoder(video_path, list_render[0].shape, 30, 30)
+        for im in list_render:
+            encoder.capture_frame(im)
+        encoder.close()
+
+        avg_ep_stat = WandbCallback.get_avg_ep_stat(ep_stat_buffer, prefix='eval/')
+        avg_ep_stat['eval/eval_timeout'] = n_timeout
+
+        duration = time.time() - t0
+        avg_ep_stat['time/t_eval'] = duration
+        avg_ep_stat['time/fps_eval'] = n_step * env.num_envs / duration
+
+        for i in range(env.num_envs):
+            env.set_attr('eval_mode', False, indices=i)
+        obs = env.reset()
+        return avg_ep_stat, ep_events
+
+    @staticmethod
     def get_avg_ep_stat(ep_stat_buffer, prefix=''):
         avg_ep_stat = {}
         if len(ep_stat_buffer) > 0:
