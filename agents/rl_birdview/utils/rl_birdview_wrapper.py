@@ -24,12 +24,14 @@ class RlBirdviewWrapper(gym.Wrapper):
     render_mode: str = "rgb_array"
     
     def __init__(self, env, input_states=[], acc_as_action=False):
-        env = env.unwrapped
+        env = getattr(env, "unwrapped", env)
         assert len(env._obs_configs) == 1
         self._ev_id = list(env._obs_configs.keys())[0]
         self._input_states = input_states
         self._acc_as_action = acc_as_action
         self._render_dict = {}
+        self._ep_reward = 0.0
+        self._ep_step = 0
 
         self.action_value = 0.0
         self.action_log_probs = 0.0
@@ -72,6 +74,9 @@ class RlBirdviewWrapper(gym.Wrapper):
         self.eval_mode = False
 
     def reset(self):
+        self._ep_reward = 0.0
+        self._ep_step = 0
+
         self.env.set_task_idx(np.random.choice(self.env.num_tasks))
         if self.eval_mode:
             self.env._task['num_zombie_vehicles'] = eval_num_zombie_vehicles[self.env._carla_map]
@@ -108,6 +113,7 @@ class RlBirdviewWrapper(gym.Wrapper):
         return obs
 
     def step(self, action):
+        self._ep_step += 1
         action_ma = {self._ev_id: self.process_act(action, self._acc_as_action)}
 
         obs_ma, reward_ma, done_ma, info_ma = self.env.step(action_ma)
@@ -116,6 +122,7 @@ class RlBirdviewWrapper(gym.Wrapper):
         reward = reward_ma[self._ev_id]
         done = done_ma[self._ev_id]
         info = info_ma[self._ev_id]
+        self._ep_reward += reward
 
         self._render_dict = {
             'timestamp': self.env.timestamp,
@@ -127,6 +134,11 @@ class RlBirdviewWrapper(gym.Wrapper):
             'reward_debug': info['reward_debug'],
             'terminal_debug': info['terminal_debug']
         }
+        if done:
+            info["episode"] = info["episode_stat"].copy()
+            info["episode"]["r"] = self._ep_reward
+            info["episode"]["l"] = self._ep_step
+
         return obs, reward, done, info
 
     def render(self, mode='human'):
